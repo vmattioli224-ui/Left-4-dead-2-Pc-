@@ -11,12 +11,22 @@ jobs:
       - name: Preparar arquivos
         shell: pwsh
         run: |
-          $dir = '.'
-          if (Test-Path 'L4D2-GameHub-exe.zip') { Expand-Archive 'L4D2-GameHub-exe.zip' -DestinationPath . -Force; $dir = 'L4D2-GameHub' }
-          "APP_DIR=$dir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-      - name: Instalar e baixar three.js
+          Expand-Archive 'L4D2-GameHub-exe.zip' -DestinationPath . -Force
+          "APP_DIR=L4D2-GameHub" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Instalar
         shell: pwsh
         working-directory: ${{ env.APP_DIR }}
         run: |
           npm install --no-audit --no-fund
-          New-Item -ItemType Directory -Force vendor
+          Invoke-WebRequest https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js -OutFile vendor/three.min.js
+      - name: Gerar exe
+        shell: pwsh
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          npx electron-packager . L4D2Test --platform=win32 --arch=x64 --out=dist --overwrite --asar=false --ignore="^/(dist|servidor|.github|BUILD-EXE|LEIA-ME)"
+          Copy-Item config.json dist/L4D2Test-win32-x64/config.json
+          Copy-Item servidor dist/L4D2Test-win32-x64/servidor -Recurse
+      - uses: actions/upload-artifact@v4
+        with:
+          name: L4D2Test-exe
+          path: ${{ env.APP_DIR }}/dist/L4D2Test-win32-x64
