@@ -1,0 +1,22 @@
+name: Gerar L4D2Test.exe
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Preparar arquivos
+        shell: pwsh
+        run: |
+          $dir = '.'
+          if (Test-Path 'L4D2-GameHub-exe.zip') { Expand-Archive 'L4D2-GameHub-exe.zip' -DestinationPath . -Force; $dir = 'L4D2-GameHub' }
+          "APP_DIR=$dir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Instalar e baixar three.js
+        shell: pwsh
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          npm install --no-audit --no-fund
+          New-Item -ItemType Directory -Force vendor
